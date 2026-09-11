@@ -31,7 +31,7 @@ const SubscriptionCard = ({ name, price, currency, icon, billing, color, categor
                         <View className="sub-row">
                             <View className="sub-row-copy">
                                 <Text className="sub-label">Payment:</Text>
-                                <Text className="sub-value" numberOfLines={1} ellipsizeMode="tail">{paymentMethod?.trim() ?? 'Not provided'}</Text>
+                                <Text className="sub-value" numberOfLines={1} ellipsizeMode="tail">{paymentMethod?.trim() || 'Not provided'}</Text>
                             </View>
                         </View>
                         <View className="sub-row">

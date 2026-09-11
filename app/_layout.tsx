@@ -1,10 +1,12 @@
-import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
+import { SplashScreen, Stack, usePathname, useRouter, useSegments } from "expo-router";
 import "@/global.css";
 import { useFonts } from "expo-font";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { ClerkProvider, useAuth } from "@clerk/expo";
+import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog } from "@/lib/posthog";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,11 +32,52 @@ if (!fontsLoaded) return null;
     const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
     if (!publishableKey) throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to .env");
 
-    return (
+    const app = (
         <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+            <AnalyticsIdentity />
             <AuthGate />
         </ClerkProvider>
     );
+
+    if (!posthog) return app;
+
+    return (
+        <PostHogProvider
+            client={posthog}
+            autocapture={{ captureScreens: false, captureTouches: true }}
+        >
+            <ScreenTracker />
+            {app}
+        </PostHogProvider>
+    );
+}
+
+function ScreenTracker() {
+    const pathname = usePathname();
+    const previousPathname = useRef<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (!posthog || previousPathname.current === pathname) return;
+        posthog.screen(pathname, { previous_screen: previousPathname.current ?? null });
+        previousPathname.current = pathname;
+    }, [pathname]);
+
+    return null;
+}
+
+function AnalyticsIdentity() {
+    const { isLoaded, user } = useUser();
+
+    useEffect(() => {
+        if (!isLoaded || !user || !posthog) return;
+
+        const personProperties: Record<string, string> = {};
+        if (user.primaryEmailAddress?.emailAddress) personProperties.email = user.primaryEmailAddress.emailAddress;
+        if (user.fullName) personProperties.name = user.fullName;
+        posthog.identify(user.id, personProperties);
+    }, [isLoaded, user]);
+
+    return null;
 }
 
 function AuthGate() {

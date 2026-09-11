@@ -11,64 +11,62 @@ import ListHeading from "@/components/ListHeading";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import { useState } from "react";
+import { posthog } from "@/lib/posthog";
 
 const SafeAreaView = styled(RNSafeAreaView);
+
+function HomeListHeader() {
+    return (
+        <>
+            <View className="home-header">
+                <View className="home-user">
+                    <Image source={images.avatar} className="home-avatar" />
+                    <Text className="home-user-name">{HOME_USER.name}</Text>
+                </View>
+
+                <Pressable onPress={() => {}}>
+                    <Image source={icons.add} className="home-add-icon" />
+                </Pressable>
+            </View>
+
+            <View className="home-balance-card">
+                <Text className="home-balance-label">Balance</Text>
+                <View className="home-balance-row">
+                    <Text className="home-balance-amount">{formatCurrency(HOME_BALANCE.amount)}</Text>
+                    <Text className="home-balance-date">{dayjs(HOME_BALANCE.nextRenewalDate).format('MM/DD')}</Text>
+                </View>
+            </View>
+
+            <View className="mb-5">
+                <ListHeading title="Upcoming" />
+                <FlatList
+                    data={UPCOMING_SUBSCRIPTIONS}
+                    renderItem={({ item }) => <UpcomingSubscriptionCard {...item} />}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    ListEmptyComponent={<Text className="home-empty-state">No upcoming renewals yet.</Text>}
+                />
+            </View>
+
+            <ListHeading title="All Subscriptions" />
+        </>
+    );
+}
 
 export default function Home() {
     const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
 
     const handleSubscriptionPress = (item: Subscription) => {
-        setExpandedSubscriptionId((currentId) => (currentId === item.id ? null : item.id));
+        const isExpanding = expandedSubscriptionId !== item.id;
+        setExpandedSubscriptionId(isExpanding ? item.id : null);
+        if (isExpanding) posthog?.capture("subscription_expanded", { subscription_id: item.id });
     };
 
     return (
         <SafeAreaView className="flex-1 bg-background p-5">
             <FlatList
-                ListHeaderComponent={() => (
-                    <>
-                        <View className="home-header">
-                            <View className="home-user">
-                                <Image
-                                    source={images.avatar}
-                                    className="home-avatar"
-                                />
-                                <Text className="home-user-name">{HOME_USER.name}</Text>
-                            </View>
-
-                            <Pressable onPress={() => {}}>
-                                <Image source={icons.add} className="home-add-icon" />
-                            </Pressable>
-                        </View>
-
-                        <View className="home-balance-card">
-                            <Text className="home-balance-label">Balance</Text>
-
-                            <View className="home-balance-row">
-                                <Text className="home-balance-amount">
-                                    {formatCurrency(HOME_BALANCE.amount)}
-                                </Text>
-                                <Text className="home-balance-date">
-                                    {dayjs(HOME_BALANCE.nextRenewalDate).format('MM/DD')}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View className="mb-5">
-                            <ListHeading title="Upcoming" />
-
-                            <FlatList
-                                data={UPCOMING_SUBSCRIPTIONS}
-                                renderItem={({ item }) => <UpcomingSubscriptionCard {...item} />}
-                                keyExtractor={(item) => item.id}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                ListEmptyComponent={<Text className="home-empty-state">No upcoming renewals yet.</Text>}
-                            />
-                        </View>
-
-                        <ListHeading title="All Subscriptions" />
-                    </>
-                )}
+                ListHeaderComponent={HomeListHeader}
                 data={HOME_SUBSCRIPTIONS}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
