@@ -227,6 +227,30 @@
         @apply py-4 text-sm font-sans-medium text-black/60;
     }
 
+    .subscription-search-wrap {
+        @apply mt-5 flex-row items-center rounded-2xl border border-border bg-card px-4;
+    }
+
+    .subscription-search-input {
+        @apply min-h-14 flex-1 py-3 text-base font-sans-medium text-primary;
+    }
+
+    .subscription-search-clear {
+        @apply size-8 items-center justify-center rounded-full bg-muted;
+    }
+
+    .subscription-search-clear-text {
+        @apply -mt-1 text-2xl font-sans-medium leading-none text-primary;
+    }
+
+    .subscription-empty-state {
+        @apply mt-10 items-center;
+    }
+
+    .subscription-empty-title {
+        @apply text-lg font-sans-bold text-primary;
+    }
+
     .auth-safe-area {
         @apply flex-1 bg-background;
     }

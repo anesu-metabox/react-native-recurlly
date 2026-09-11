@@ -10,12 +10,17 @@ import dayjs from "dayjs";
 import ListHeading from "@/components/ListHeading";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import SubscriptionCard from "@/components/SubscriptionCard";
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import { useState } from "react";
 import { posthog } from "@/lib/posthog";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
-function HomeListHeader() {
+interface HomeListHeaderProps {
+    onAddPress: () => void;
+}
+
+function HomeListHeader({ onAddPress }: HomeListHeaderProps) {
     return (
         <>
             <View className="home-header">
@@ -24,7 +29,7 @@ function HomeListHeader() {
                     <Text className="home-user-name">{HOME_USER.name}</Text>
                 </View>
 
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={onAddPress} hitSlop={8}>
                     <Image source={icons.add} className="home-add-icon" />
                 </Pressable>
             </View>
@@ -55,7 +60,13 @@ function HomeListHeader() {
 }
 
 export default function Home() {
+    const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => HOME_SUBSCRIPTIONS);
     const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
+    const [isCreateModalVisible, setCreateModalVisible] = useState(false);
+
+    const handleCreateSubscription = (subscription: Subscription) => {
+        setSubscriptions((currentSubscriptions) => [subscription, ...currentSubscriptions]);
+    };
 
     const handleSubscriptionPress = (item: Subscription) => {
         const isExpanding = expandedSubscriptionId !== item.id;
@@ -66,8 +77,8 @@ export default function Home() {
     return (
         <SafeAreaView className="flex-1 bg-background p-5">
             <FlatList
-                ListHeaderComponent={HomeListHeader}
-                data={HOME_SUBSCRIPTIONS}
+                ListHeaderComponent={<HomeListHeader onAddPress={() => setCreateModalVisible(true)} />}
+                data={subscriptions}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <SubscriptionCard
@@ -81,6 +92,11 @@ export default function Home() {
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={<Text className="home-empty-state">No subscriptions yet.</Text>}
                 contentContainerClassName="pb-30"
+            />
+            <CreateSubscriptionModal
+                visible={isCreateModalVisible}
+                onClose={() => setCreateModalVisible(false)}
+                onCreate={handleCreateSubscription}
             />
         </SafeAreaView>
     );
